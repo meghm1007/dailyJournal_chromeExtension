@@ -5,6 +5,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const settingsButton = document.getElementById("settingsButton");
   const downloadButtonPro = document.getElementById("downloadButton");
 
+  // Retrieve the saved button IDs from local storage
+  const savedButtonIds = JSON.parse(localStorage.getItem("buttonIds")) || [];
+
   settingsButton.addEventListener("click", () => {
     chrome.tabs.create({
       url: "settings.html",
@@ -12,37 +15,30 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   downloadButtonPro.addEventListener("click", () => {
-    var goals_container = document.getElementById("goalsContainer");
-    var goals_divs = goals_container.getElementsByTagName("div");
-    var data = [];
-    for (i = 0; i < goals_divs.length; i++) {
-      sentence = goals_divs[i].innerText;
-      res = "";
-      for (j = 0; j < sentence.length; j++) {
+    const goals_container = document.getElementById("goalsContainer");
+    const goals_divs = goals_container.getElementsByTagName("div");
+    const data = [];
+    for (let i = 0; i < goals_divs.length; i++) {
+      let sentence = goals_divs[i].innerText;
+      let res = "";
+      for (let j = 0; j < sentence.length; j++) {
         if (
-          /^[a-zA-Z0-9\s~`!@#$%^&*()-_+={}[\]:;<>,.?/'"|\\]+$/.test(
-            sentence[j]
-          ) == true
+          /^[a-zA-Z0-9\s~`!@#$%^&*()-_+={}[\]:;<>,.?/'"|\\]+$/.test(sentence[j])
         ) {
           res += sentence[j];
         }
       }
       data.push(res);
     }
-    //data = ['sample text 1', 'sample text 2', 'sample text 3']
 
     alert("Document Saved!");
 
-    var dataString = data.join("\n"); // Use '\n' or any separator you prefer
-
-    var file = new Blob([dataString], {
-      type: "text",
-    });
-    var anchor = document.createElement("a");
+    const dataString = data.join("\n"); // Use '\n' or any separator you prefer
+    const file = new Blob([dataString], { type: "text" });
+    const anchor = document.createElement("a");
 
     anchor.href = URL.createObjectURL(file);
     anchor.download = "save.txt";
-
     anchor.click();
   });
 
@@ -50,11 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   calendarButton.addEventListener("click", function () {
     calActive = !calActive;
-    if (calActive) {
-      calendarButton.innerText = "Hide Calendar";
-    } else {
-      calendarButton.innerText = "Show Calendar";
-    }
+    calendarButton.innerText = calActive ? "Hide Calendar" : "Show Calendar";
     toggleCalendar();
     generateCalendar();
   });
@@ -84,7 +76,6 @@ document.addEventListener("DOMContentLoaded", function () {
     ];
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();
-    const calendarContainer = document.getElementById("calendarContainer"); // Assuming calendarContainer is defined
 
     let calendarHTML = "<table>";
     calendarHTML +=
@@ -97,13 +88,11 @@ document.addEventListener("DOMContentLoaded", function () {
       calendarHTML += `<tr><th colspan="7">${months[i]}</th></tr>`;
       calendarHTML += "<tr>";
 
-      // Calculate the number of empty cells before the 1st day of the month
       const firstDayOfMonth = dayCounter % 7;
       for (let k = 0; k < firstDayOfMonth; k++) {
         calendarHTML += "<td></td>";
       }
 
-      // Generate the days of the month as smaller buttons
       for (let j = 1; j <= daysInMonth[i]; j++) {
         if (dayCounter % 7 === 0) {
           calendarHTML += "</tr><tr>";
@@ -113,16 +102,17 @@ document.addEventListener("DOMContentLoaded", function () {
         const isPastDay =
           i < currentMonth || (i === currentMonth && j < currentDate.getDate());
         const buttonDisabled = !isCurrentMonth || isPastDay;
-
-        // Add title attribute to disabled buttons
         const titleText = buttonDisabled
           ? "You cannot add dreams for this day"
           : "";
-
         const buttonId = `${months[i].substring(0, 3)}${j}`;
+        const isSavedButton = savedButtonIds.includes(buttonId);
+
         calendarHTML += `<td><button id="${buttonId}" class="dayButton" data-month="${i}" data-day="${j}" ${
           buttonDisabled ? "disabled" : ""
-        } title="${titleText}">${j}</button></td>`;
+        } title="${titleText}" style="background-color: ${
+          isSavedButton ? "green" : ""
+        };">${j}</button></td>`;
         dayCounter++;
 
         if (dayCounter > 7) {
@@ -130,7 +120,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       }
 
-      // Calculate the remaining empty cells after the last day of the month
       const remainingEmptyCells = 7 - (dayCounter - 1);
       for (let m = 0; m < remainingEmptyCells; m++) {
         calendarHTML += "<td></td>";
@@ -147,45 +136,34 @@ document.addEventListener("DOMContentLoaded", function () {
       button.style.padding = "3px 6px";
     });
 
-    // Attach event listeners to the day buttons
     dayButtons.forEach((button) => {
       button.addEventListener("click", function () {
         const buttonId = `${months[button.dataset.month].substring(0, 3)}${
           button.dataset.day
         }`;
 
-        // Create a custom modal for goal input
         const modal = document.createElement("div");
         modal.className = "goal-modal";
-
-        // Create goal input field
         const goalInput = document.createElement("textarea");
         goalInput.placeholder = "Journal at least 100 words today...";
         goalInput.className = "goal-input";
-
-        // Create save button
         const saveButton = document.createElement("button");
         saveButton.innerText = "Save";
         saveButton.className = "save-btn";
-
-        // Create delete button
         const deleteButton = document.createElement("button");
         deleteButton.innerText = "Delete";
         deleteButton.className = "delete-btn";
-
-        // Append input, buttons, and score display to modal
         modal.appendChild(goalInput);
         modal.appendChild(saveButton);
         modal.appendChild(deleteButton);
-
-        // Append modal to body
         document.body.appendChild(modal);
-
-        // Focus on the input field
         goalInput.focus();
 
-        // Add event listener to save button
         saveButton.addEventListener("click", function () {
+          button.style.backgroundColor = "green";
+          savedButtonIds.push(buttonId); // Add button ID to savedButtonIds
+          localStorage.setItem("buttonIds", JSON.stringify(savedButtonIds)); // Save the updated button IDs to local storage
+
           const userGoal = goalInput.value.trim();
           const wordCount = userGoal
             .split(/\s+/)
@@ -196,58 +174,40 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
           }
 
-          const goalsContainer = document.getElementById("goalsContainer"); // Assuming goalsContainer is defined
-          goalsContainer.scrollIntoView({
-            behavior: "smooth",
-          });
+          goalsContainer.scrollIntoView({ behavior: "smooth" });
 
           const goalDate = `${months[button.dataset.month]} ${
             button.dataset.day
           }`;
 
-          // Store the goal in local storage
           const storedGoals = JSON.parse(localStorage.getItem("goals")) || [];
-          storedGoals.push({
-            date: goalDate,
-            goal: userGoal,
-          });
+          storedGoals.push({ date: goalDate, goal: userGoal });
           localStorage.setItem("goals", JSON.stringify(storedGoals));
 
-          // Create a new element to display the goal
           const goalElement = document.createElement("div");
           goalElement.className = "goal";
           goalElement.innerHTML = `<span>${goalDate}:</span> ${userGoal}`;
 
-          // Create delete button for the goal
           const goalDeleteButton = document.createElement("button");
           goalDeleteButton.innerText = "🗑️";
           goalDeleteButton.className = "delete-goal-btn";
-
-          // Add event listener to the delete button
           goalDeleteButton.addEventListener("click", function () {
-            // Remove the goal from local storage
             const updatedGoals = storedGoals.filter(
               (goal) => goal.date !== goalDate
             );
             localStorage.setItem("goals", JSON.stringify(updatedGoals));
-
-            // Remove the goal element when the delete button is clicked
             goalsContainer.removeChild(goalElement);
+            savedButtonIds.splice(savedButtonIds.indexOf(buttonId), 1); // Remove button ID from savedButtonIds
+            localStorage.setItem("buttonIds", JSON.stringify(savedButtonIds)); // Update local storage
+            button.style.backgroundColor = ""; // Reset button color
           });
 
-          // Append the delete button to the goal element
           goalElement.appendChild(goalDeleteButton);
-
-          // Append the goal to the goalsContainer
           goalsContainer.appendChild(goalElement);
-
-          // Close the modal
           document.body.removeChild(modal);
         });
 
-        // Add event listener to delete button
         deleteButton.addEventListener("click", function () {
-          // Close the modal without saving
           document.body.removeChild(modal);
         });
       });
@@ -260,42 +220,28 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Load stored goals from local storage on page load
   function loadStoredGoals() {
     const storedGoals = JSON.parse(localStorage.getItem("goals")) || [];
-
     storedGoals.forEach((goal) => {
-      const { date, goal: text, score } = goal; // Include 'score' property
-
-      // Create a new element to display the goal with score
+      const { date, goal: text } = goal;
       const goalElement = document.createElement("div");
       goalElement.className = "goal";
-      goalElement.innerHTML = `<span>${date}:</span> ${text}`; //<strong><em>Score: ${score}</strong></em>;
+      goalElement.innerHTML = `<span>${date}:</span> ${text}`;
 
-      // Create delete button for the goal
       const goalDeleteButton = document.createElement("button");
       goalDeleteButton.innerText = "🗑️";
       goalDeleteButton.className = "delete-goal-btn";
-
-      // Add event listener to the delete button
       goalDeleteButton.addEventListener("click", function () {
-        // Remove the goal from local storage
         const updatedGoals = storedGoals.filter((g) => g.date !== date);
         localStorage.setItem("goals", JSON.stringify(updatedGoals));
-
-        // Remove the goal element when the delete button is clicked
         goalsContainer.removeChild(goalElement);
       });
 
-      // Append the delete button to the goal element
       goalElement.appendChild(goalDeleteButton);
-
-      // Append the goal to the goalsContainer
       goalsContainer.appendChild(goalElement);
     });
   }
 
-  // Call the function to load stored goals on page load
   loadStoredGoals();
 
   settingsButton.addEventListener("click", () => {
@@ -304,22 +250,19 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Retrieve the settings from chrome.storage when the popup is opened
   chrome.storage.sync.get("settings", function (result) {
     const savedSettings = result.settings;
-
     if (savedSettings) {
-      // Use the retrieved settings as needed
       console.log("Retrieved Settings:", savedSettings);
     }
   });
 
   function extractDatesFromGoalsContainer() {
     const scores_array = [];
-    var goals_container2 = document.getElementById("goalsContainer");
-    var goals_divs2 = goals_container2.getElementsByTagName("div");
-    for (i = 0; i < goals_divs2.length; i++) {
-      sentence = goals_divs2[i].innerText;
+    const goals_container2 = document.getElementById("goalsContainer");
+    const goals_divs2 = goals_container2.getElementsByTagName("div");
+    for (let i = 0; i < goals_divs2.length; i++) {
+      let sentence = goals_divs2[i].innerText;
       const scoreIndex = sentence.indexOf("Score: ");
       const score = sentence.substring(scoreIndex + 7, sentence.length - 4);
       const intScore = parseInt(score, 10);
@@ -330,7 +273,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const goalsContainer = document.getElementById("goalsContainer");
     const goalElements = goalsContainer.querySelectorAll("div.goal");
     const dateArray = [];
-
     const dateRegex =
       /(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d+)/;
 
@@ -339,39 +281,34 @@ document.addEventListener("DOMContentLoaded", function () {
       if (spanElement) {
         const match = dateRegex.exec(spanElement.innerText);
         if (match) {
-          const formattedDate = match[0].replace(/\s/g, ""); // Remove spaces from the date
+          const formattedDate = match[0].replace(/\s/g, "");
           dateArray.push(formattedDate);
         }
       }
     });
 
     const dayButtons = document.querySelectorAll(".dayButton");
-
     dayButtons.forEach((button) => {
       const buttonId = button.id;
-
-      // Check if buttonId is in dateArray
       if (dateArray.includes(buttonId)) {
-        // Change the color of the button to green
         button.style.backgroundColor = "green";
-        button.style.color = "white"; // You can adjust text color as needed
+        button.style.color = "white";
       }
     });
 
-    console.log(dateArray); // You can store or use the dateArray as needed
+    console.log(dateArray);
   }
 
-  // Call the function to extract dates from the goalsContainer on page load
   extractDatesFromGoalsContainer();
 
-  var goals_container = document.getElementById("goalsContainer");
-  var goals_divs = goals_container.getElementsByTagName("div");
-  for (i = 0; i < goals_divs.length; i++) {
-    sentenceBG = goals_divs[i];
-    sentence = goals_divs[i].innerText;
+  const goals_container = document.getElementById("goalsContainer");
+  const goals_divs = goals_container.getElementsByTagName("div");
+  for (let i = 0; i < goals_divs.length; i++) {
+    const sentenceBG = goals_divs[i];
+    let sentence = goals_divs[i].innerText;
     sentence = sentence.split(":")[1].trim();
     sentence = sentence.replace(/\n🗑️$/, "");
-    colorr = sentimentAnalysis(sentence);
+    const colorr = sentimentAnalysis(sentence);
     sentenceBG.style.backgroundColor = colorr;
   }
 
