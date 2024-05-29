@@ -1,20 +1,33 @@
-
-h1 {
+#website-title {
   color: #ff0000;
   text-align: center;
   margin-top: 50px;
 }
 
-div{
-    align-items: center;
+#blocked-container {
+  align-items: center;
+  background-color: black;
 }
 
-p {
-  color: white;
+#journal-message,
+#journal-message-controls {
+  color: rgb(176, 176, 176);
   text-align: center;
   margin-top: 30px;
 }
-button {
+
+#journal-message-controls {
+  size: 25px;
+  font-weight: bold;
+}
+
+#control-text {
+  color: white;
+  size: 35px;
+  font-weight: bold;
+}
+
+#journal-button {
   margin-top: 10px;
   background-color: rgb(45, 255, 175);
   color: white;
