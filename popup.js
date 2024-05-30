@@ -5,6 +5,27 @@ document.addEventListener("DOMContentLoaded", function () {
   const settingsButton = document.getElementById("settingsButton");
   const downloadButtonPro = document.getElementById("downloadButton");
 
+  const isJournalHeader = document.getElementById("isJournalHeader");
+
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentDay = currentDate.getDate();
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const todayDay = (months[currentMonth] + currentDay).toString();
+
   // Function to check the date and button status daily
   function checkDailyJournalStatus() {
     const currentDate = new Date();
@@ -28,6 +49,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const button = document.getElementById(buttonId);
 
     const journalStatus = button && button.style.backgroundColor === "green";
+    if (journalStatus) {
+      isJournalHeader.innerText = journalStatus;
+    }
     chrome.runtime.sendMessage({
       message: "journalAdded",
       date: buttonId,
@@ -139,7 +163,7 @@ document.addEventListener("DOMContentLoaded", function () {
           i < currentMonth || (i === currentMonth && j < currentDate.getDate());
         const buttonDisabled = !isCurrentMonth || isPastDay;
         const titleText = buttonDisabled
-          ? "You cannot add dreams for this day"
+          ? "You cannot add journals for this day"
           : "";
         const buttonId = `${months[i].substring(0, 3)}${j}`;
         const isSavedButton = savedButtonIds.includes(buttonId);

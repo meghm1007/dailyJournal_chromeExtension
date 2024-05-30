@@ -3,3 +3,15 @@ chrome.commands.onCommand.addListener(function (command) {
     chrome.action.openPopup();
   }
 });
+
+
+
+
+
+
+
+// chrome.runtime.sendMessage({
+//   message: "journalAdded",
+//   date: buttonId,
+//   status: journalStatus,
+// });
