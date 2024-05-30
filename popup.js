@@ -5,6 +5,42 @@ document.addEventListener("DOMContentLoaded", function () {
   const settingsButton = document.getElementById("settingsButton");
   const downloadButtonPro = document.getElementById("downloadButton");
 
+  // Function to check the date and button status daily
+  function checkDailyJournalStatus() {
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentDay = currentDate.getDate();
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const buttonId = `${months[currentMonth].substring(0, 3)}${currentDay}`;
+    const button = document.getElementById(buttonId);
+
+    const journalStatus = button && button.style.backgroundColor === "green";
+    chrome.runtime.sendMessage({
+      message: "journalAdded",
+      date: buttonId,
+      status: journalStatus,
+    });
+  }
+
+  // Check daily journal status every day at midnight
+  setInterval(checkDailyJournalStatus, 24 * 60 * 60 * 1000);
+
+  // Initial check when the script runs
+  checkDailyJournalStatus();
+
   // Retrieve the saved button IDs from local storage
   const savedButtonIds = JSON.parse(localStorage.getItem("buttonIds")) || [];
 
@@ -200,11 +236,13 @@ document.addEventListener("DOMContentLoaded", function () {
             savedButtonIds.splice(savedButtonIds.indexOf(buttonId), 1); // Remove button ID from savedButtonIds
             localStorage.setItem("buttonIds", JSON.stringify(savedButtonIds)); // Update local storage
             button.style.backgroundColor = ""; // Reset button color
+            checkDailyJournalStatus(); // Update journal status after deletion
           });
 
           goalElement.appendChild(goalDeleteButton);
           goalsContainer.appendChild(goalElement);
           document.body.removeChild(modal);
+          checkDailyJournalStatus(); // Update journal status after saving
         });
 
         deleteButton.addEventListener("click", function () {
@@ -212,7 +250,10 @@ document.addEventListener("DOMContentLoaded", function () {
         });
       });
 
-      if (button.hasAttribute("disabled")) {
+      if (
+        button.hasAttribute("disabled") &&
+        button.style.backgroundColor !== "green"
+      ) {
         button.style.background = "#ddd";
         button.style.opacity = "0.6";
         button.style.cursor = "not-allowed";
@@ -235,6 +276,13 @@ document.addEventListener("DOMContentLoaded", function () {
         const updatedGoals = storedGoals.filter((g) => g.date !== date);
         localStorage.setItem("goals", JSON.stringify(updatedGoals));
         goalsContainer.removeChild(goalElement);
+        savedButtonIds.splice(savedButtonIds.indexOf(buttonId), 1); // Remove button ID from savedButtonIds
+        localStorage.setItem("buttonIds", JSON.stringify(savedButtonIds)); // Update local storage
+        const button = document.getElementById(buttonId);
+        if (button) {
+          button.style.backgroundColor = ""; // Reset button color
+        }
+        checkDailyJournalStatus(); // Update journal status after deletion
       });
 
       goalElement.appendChild(goalDeleteButton);
