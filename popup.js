@@ -235,6 +235,7 @@ document.addEventListener("DOMContentLoaded", function () {
               date: goalDate,
               goal: userGoal,
               score: userScore,
+              buttonId: buttonId, // Add buttonId to the stored goals
             });
             localStorage.setItem("goals", JSON.stringify(storedGoals));
 
@@ -265,6 +266,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Append the goal to the goalsContainer
             goalsContainer.appendChild(goalElement);
+
+            // Change the button color to green
+            button.style.backgroundColor = "green";
+
+            // Store the button state in local storage
+            const storedButtonStates =
+              JSON.parse(localStorage.getItem("buttonStates")) || {};
+            storedButtonStates[buttonId] = true;
+            localStorage.setItem(
+              "buttonStates",
+              JSON.stringify(storedButtonStates)
+            );
           }
 
           // Close the modal
@@ -278,10 +291,22 @@ document.addEventListener("DOMContentLoaded", function () {
         });
       });
 
+      // Disable button styles if disabled
       if (button.hasAttribute("disabled")) {
         button.style.background = "#ddd";
         button.style.opacity = "0.6";
         button.style.cursor = "not-allowed";
+      }
+    });
+
+    const storedButtonStates =
+      JSON.parse(localStorage.getItem("buttonStates")) || {};
+    dayButtons.forEach((button) => {
+      const buttonId = `${months[button.dataset.month].substring(0, 3)}${
+        button.dataset.day
+      }`;
+      if (storedButtonStates[buttonId]) {
+        button.style.backgroundColor = "green";
       }
     });
 
@@ -405,10 +430,15 @@ document.addEventListener("DOMContentLoaded", function () {
     const buttonId = `${months[currentMonth].substring(0, 3)}${currentDay}`;
     console.log(buttonId);
     //check if buttonId is in dateArray
+
     if (dateArray.includes(buttonId)) {
-      const journalStatus = true;
+      let journalStatus = true;
       console.log("Journal status", journalStatus);
       journalHeader.innerText = "Journal For Today✅";
+
+      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, { journalStatus: journalStatus });
+      });
     }
   }
 
